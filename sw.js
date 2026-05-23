@@ -1,5 +1,5 @@
 // Service Worker för Vårt Hus PWA
-const CACHE = 'vart-hus-v1';
+const CACHE = 'vart-hus-v2';
 const ASSETS = ['./vart_hus.html', './manifest.json'];
 
 self.addEventListener('install', e => {
