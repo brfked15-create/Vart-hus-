@@ -1,0 +1,24 @@
+VÅRT HUS – BRF KED15
+Installationsguide för PWA
+==============================
+
+Dessa filer ska läggas på ett webbhotell (t.ex. Netlify.com som är gratis):
+  • vart_hus.html
+  • manifest.json
+  • sw.js
+  • icon-192.png
+  • icon-512.png
+
+Steg-för-steg med Netlify (gratis):
+1. Gå till netlify.com och skapa ett konto (gratis)
+2. Dra och släpp mappen med alla filerna till Netlify
+3. Du får en länk, t.ex. https://ked15.netlify.app
+4. Skicka länken till alla i föreningen
+
+Så installerar medlemmarna appen på telefonen:
+  iPhone: Öppna länken i Safari → tryck på dela-knappen (rutan med pil uppåt)
+           → välj "Lägg till på hemskärmen"
+  Android: Öppna länken i Chrome → tryck på menyn (tre punkter)
+            → välj "Lägg till på hemskärmen" (eller en banner dyker upp automatiskt)
+
+Appen fungerar sedan offline och ser ut precis som en riktig app!

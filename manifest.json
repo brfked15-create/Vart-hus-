@@ -1,0 +1,24 @@
+{
+  "name": "Vårt Hus – BRF KED15",
+  "short_name": "Vårt Hus",
+  "description": "Bostadsrättsföreningens app för nyheter, felanmälan och annonser",
+  "start_url": "./vart_hus.html",
+  "display": "standalone",
+  "background_color": "#f2f1ef",
+  "theme_color": "#2a1c0e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
