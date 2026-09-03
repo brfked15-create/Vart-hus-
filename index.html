@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v6 -->
+<!-- v8 -->
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -79,6 +79,21 @@ body { font-family: 'Inter', sans-serif; background: #f2f1ef; display: flex; jus
 /* Admin */
 .admin-badge { background: #e8c99a; color: #2a1c0e; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px; letter-spacing: 0.8px; text-transform: uppercase; margin-left: 8px; vertical-align: middle; }
 .admin-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+/* Rondering */
+.rond-status { font-size: 12px; font-weight: 500; margin-top: 6px; }
+.rond-status.ok  { color: #2d7a3a; }
+.rond-status.due { color: #c0392b; }
+.rond-status.never { color: #9a6500; }
+.rond-btn { margin-top: 12px; width: 100%; background: #2a1c0e; color: #e8c99a; border: none; border-radius: 99px; padding: 11px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+.rond-tools { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.rond-alla { background: none; border: 1.5px solid #d4c8bb; border-radius: 99px; padding: 6px 14px; font-family: 'Inter', sans-serif; font-size: 12px; color: #8a7f72; cursor: pointer; }
+.rond-item { border: 1px solid #eee5dc; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; background: #faf9f7; }
+.rond-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 13px; color: #1a1410; line-height: 1.4; }
+.rond-check input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #2d7a3a; margin-top: 1px; }
+.rond-anm { width: 100%; border: 1px solid #e0d8d0; border-radius: 8px; padding: 7px 10px; font-family: 'Inter', sans-serif; font-size: 13px; color: #1a1410; background: #fff; outline: none; margin-top: 8px; }
+.rond-anm:focus { border-color: #a08060; }
+.rond-hist-anm { font-size: 12px; color: #9a6500; margin-top: 6px; padding-left: 10px; border-left: 2px solid #f0d9a8; }
 </style>
 </head>
 <body>
@@ -104,6 +119,10 @@ body { font-family: 'Inter', sans-serif; background: #f2f1ef; display: flex; jus
     <button class="tab" onclick="show('annonser',this)">
       <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
       Annonser
+    </button>
+    <button id="rond-tab" class="tab hidden" onclick="show('rondering',this)">
+      <svg viewBox="0 0 24 24"><path d="M9 3h6a1 1 0 011 1v1h1a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h1V4a1 1 0 011-1z"/><polyline points="9 13 11 15 15 11"/></svg>
+      Rondering
     </button>
   </div>
 
@@ -150,6 +169,14 @@ body { font-family: 'Inter', sans-serif; background: #f2f1ef; display: flex; jus
         </div>
       </div>
     </button>
+  </div>
+
+  <!-- RONDERING -->
+  <div id="rondering" class="content hidden">
+    <div class="section-label">Fastighetsrondering – var 14:e dag</div>
+    <div id="rondering-omraden"><div class="loading"><div class="spinner"></div>Hämtar rondering...</div></div>
+    <div class="section-label" style="margin-top:24px;">Historik</div>
+    <div id="rondering-historik"></div>
   </div>
 </div>
 
@@ -214,6 +241,23 @@ body { font-family: 'Inter', sans-serif; background: #f2f1ef; display: flex; jus
   </div>
 </div>
 
+<!-- RONDERINGSMODAL -->
+<div class="modal-bg" id="rond-modal">
+  <div class="modal">
+    <h3 id="rond-titel">Rondering</h3>
+    <div class="field"><label>Ditt namn (valfritt)</label><input type="text" id="rond-namn" placeholder="T.ex. Anna"></div>
+    <div class="rond-tools">
+      <button class="rond-alla" onclick="rondMarkeraAlla()">Markera alla OK</button>
+    </div>
+    <div id="rond-lista"></div>
+    <div class="field" style="margin-top:6px;"><label>Övrig anmärkning (valfritt)</label><textarea id="rond-ovrig" placeholder="Något annat att notera..."></textarea></div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="closeModal('rond-modal')">Avbryt</button>
+      <button class="btn-primary" onclick="submitRondering()">Spara rondering</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -255,10 +299,122 @@ const icons = {
   fel:    `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#9a6500;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
   solved: `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#2d7a3a;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>`,
   saljes: `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#2563b0;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
-  sokes:  `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#9a6500;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
+  sokes:  `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#9a6500;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  rond:   `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#2563b0;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M9 3h6a1 1 0 011 1v1h1a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h1V4a1 1 0 011-1z"/><polyline points="9 13 11 15 15 11"/></svg>`
 };
 
-// Admin-inloggning: 5 snabba tryck på headern
+// --- Rondering ---------------------------------------------------------
+const RONDOMRADEN = ['Trapphus 1', 'Trapphus A', 'Trapphus B', 'Källare'];
+const RONDPUNKTER = [
+  'Trapphus och entré är hela och rena',
+  'Belysning fungerar i trapphus, källare och entré',
+  'Port, entrédörrar och lås fungerar',
+  'Utrymningsvägar och trapphus är fria från föremål',
+  'Branddörrar stänger och fungerar',
+  'Brandsläckare är på plats och lättåtkomliga',
+  'Inga synliga vattenläckor eller fuktskador',
+  'Tvättstuga fungerar och visar inga läckage',
+  'Inga nya skador, klotter eller skadegörelse',
+  'Inga uppenbara säkerhetsrisker eller hinder'
+];
+const ROND_INTERVALL_DAGAR = 14;
+
+async function loadRondering() {
+  const data = await db('ronderingar', 'GET', null, '?order=skapad_at.desc');
+  // Områdeskort: visa senaste kontroll per område
+  const senastePerOmrade = {};
+  data.forEach(r => { if (!senastePerOmrade[r.omrade]) senastePerOmrade[r.omrade] = r; });
+  document.getElementById('rondering-omraden').innerHTML = RONDOMRADEN.map(omr => {
+    const senaste = senastePerOmrade[omr];
+    let status, klass;
+    if (!senaste) {
+      status = 'Aldrig kontrollerad'; klass = 'never';
+    } else {
+      const dagar = Math.floor((Date.now() - new Date(senaste.skapad_at).getTime()) / 86400000);
+      if (dagar >= ROND_INTERVALL_DAGAR) { status = `Dags igen – ${timeAgo(senaste.skapad_at)}`; klass = 'due'; }
+      else { status = `Senast: ${timeAgo(senaste.skapad_at)}`; klass = 'ok'; }
+    }
+    return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon icon-blue">${icons.rond}</div>
+        <div class="card-body">
+          <div class="card-title">${omr}</div>
+          <div class="rond-status ${klass}">${status}</div>
+          <button class="rond-btn" onclick="openRondModal('${omr.replace(/'/g, "\\'")}')">Utför rondering</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Historik
+  const hist = document.getElementById('rondering-historik');
+  if (!data.length) { hist.innerHTML = '<div class="empty">Ingen rondering registrerad än.</div>'; return; }
+  hist.innerHTML = data.map(r => {
+    const res = Array.isArray(r.resultat) ? r.resultat : [];
+    const avvikelser = res.filter(x => !x.ok || (x.anm && x.anm.trim()));
+    const antalOk = res.filter(x => x.ok).length;
+    let anmHtml = '';
+    if (avvikelser.length) {
+      anmHtml = avvikelser.map(x => `<div class="rond-hist-anm">${!x.ok ? '⚠ ' : ''}${x.punkt}${x.anm && x.anm.trim() ? ': ' + x.anm : ''}</div>`).join('');
+    }
+    if (r.ovrig_anmarkning && r.ovrig_anmarkning.trim()) {
+      anmHtml += `<div class="rond-hist-anm">Övrigt: ${r.ovrig_anmarkning}</div>`;
+    }
+    return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon ${avvikelser.length ? 'icon-amber' : 'icon-green'}">${avvikelser.length ? icons.fel : icons.solved}</div>
+        <div class="card-body">
+          <div class="card-title">${r.omrade}</div>
+          <div class="card-meta">${r.utford_av ? r.utford_av + ' · ' : ''}${timeAgo(r.skapad_at)} · ${antalOk}/${res.length} OK</div>
+          ${anmHtml}
+          ${isAdmin ? `<div class="admin-actions">
+            <button class="btn-danger" onclick="deleteItem('ronderingar','${r.id}', loadRondering)">Ta bort</button>
+          </div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openRondModal(omrade) {
+  document.getElementById('rond-titel').textContent = 'Rondering – ' + omrade;
+  document.getElementById('rond-modal').dataset.omrade = omrade;
+  document.getElementById('rond-namn').value = '';
+  document.getElementById('rond-ovrig').value = '';
+  document.getElementById('rond-lista').innerHTML = RONDPUNKTER.map((p, i) => `
+    <div class="rond-item">
+      <label class="rond-check"><input type="checkbox" id="rond-ok-${i}"><span>${p}</span></label>
+      <input type="text" class="rond-anm" id="rond-anm-${i}" placeholder="Anmärkning (valfritt)">
+    </div>`).join('');
+  openModal('rond-modal');
+}
+
+function rondMarkeraAlla() {
+  RONDPUNKTER.forEach((p, i) => { document.getElementById('rond-ok-' + i).checked = true; });
+}
+
+async function submitRondering() {
+  const omrade = document.getElementById('rond-modal').dataset.omrade;
+  const resultat = RONDPUNKTER.map((p, i) => ({
+    punkt: p,
+    ok: document.getElementById('rond-ok-' + i).checked,
+    anm: document.getElementById('rond-anm-' + i).value.trim()
+  }));
+  const ok = await db('ronderingar', 'POST', {
+    omrade,
+    utford_av: document.getElementById('rond-namn').value.trim() || null,
+    resultat,
+    ovrig_anmarkning: document.getElementById('rond-ovrig').value.trim() || null
+  });
+  if (ok) {
+    closeModal('rond-modal');
+    showToast('Rondering sparad!');
+    loadRondering();
+  }
+}
+
 let tapCount = 0, tapTimer;
 document.getElementById('hero-tap').addEventListener('click', () => {
   tapCount++;
@@ -279,8 +435,9 @@ function tryLogin() {
     document.getElementById('admin-pw').value = '';
     document.getElementById('admin-badge').classList.remove('hidden');
     document.getElementById('ny-nyhet-btn').classList.remove('hidden');
+    document.getElementById('rond-tab').classList.remove('hidden');
     showToast('Välkommen, styrelsen!');
-    loadNyheter(); loadFelanmalan(); loadAnnonser();
+    loadNyheter(); loadFelanmalan(); loadAnnonser(); loadRondering();
   } else {
     showToast('Fel lösenord');
   }
@@ -459,7 +616,7 @@ function showToast(msg) {
 }
 
 function show(id, btn) {
-  ['anslagstavla','felanmalan','annonser'].forEach(s => document.getElementById(s).classList.add('hidden'));
+  ['anslagstavla','felanmalan','annonser','rondering'].forEach(s => document.getElementById(s).classList.add('hidden'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.remove('hidden');
   btn.classList.add('active');
