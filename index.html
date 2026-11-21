@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v9 -->
+<!-- v10 -->
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -45,6 +45,7 @@ body { font-family: 'Inter', sans-serif; background: #f2f1ef; display: flex; jus
 .card-meta  { font-size: 11px; color: #9a8f82; }
 .card-text  { font-size: 13px; color: #5a5048; margin-top: 7px; line-height: 1.55; }
 .card-text a { color: #8a5a2b; font-weight: 500; text-decoration: underline; text-underline-offset: 2px; word-break: break-word; }
+.card-bild { display: block; max-width: 100%; height: auto; border-radius: 12px; margin-top: 10px; }
 .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 99px; margin-top: 8px; }
 .badge-blue  { background: #e8f1fb; color: #2563b0; }
 .badge-amber { background: #fef3dc; color: #9a6500; }
@@ -295,14 +296,18 @@ function timeAgo(dateStr) {
   return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
 }
 
-// Gör inklistrade länkar klickbara. Lämnar redan färdiga <a>-taggar orörda.
+// Gör inklistrade länkar klickbara, och bild-länkar till bilder.
+// Lämnar redan färdiga <a>- och <img>-taggar orörda.
 function linkify(text) {
   if (!text) return '';
-  return text.split(/(<a\b[^>]*>.*?<\/a>)/gis).map(del => {
-    if (/^<a\b/i.test(del)) return del;
+  return text.split(/(<a\b[^>]*>.*?<\/a>|<img\b[^>]*>)/gis).map(del => {
+    if (/^<a\b/i.test(del) || /^<img\b/i.test(del)) return del;
     return del.replace(/(https?:\/\/[^\s<]+)/g, url => {
       const svans = (url.match(/[.,;:!?)\]]+$/) || [''])[0];
       const ren = svans ? url.slice(0, -svans.length) : url;
+      if (/\.(png|jpe?g|gif|webp|svg|avif)(\?[^\s]*)?$/i.test(ren)) {
+        return `<img src="${ren}" alt="" class="card-bild" loading="lazy">${svans}`;
+      }
       return `<a href="${ren}" target="_blank" rel="noopener noreferrer">${ren}</a>${svans}`;
     });
   }).join('');
