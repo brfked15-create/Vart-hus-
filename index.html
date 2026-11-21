@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v10 -->
+<!-- v11 -->
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -296,13 +296,15 @@ function timeAgo(dateStr) {
   return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
 }
 
-// Gör inklistrade länkar klickbara, och bild-länkar till bilder.
-// Lämnar redan färdiga <a>- och <img>-taggar orörda.
+// Gör inklistrade länkar klickbara, bild-länkar till bilder och
+// e-postadresser till mailto-länkar. Lämnar färdiga <a>/<img> orörda.
 function linkify(text) {
   if (!text) return '';
-  return text.split(/(<a\b[^>]*>.*?<\/a>|<img\b[^>]*>)/gis).map(del => {
+  const delaUtTaggar = s => s.split(/(<a\b[^>]*>.*?<\/a>|<img\b[^>]*>)/gis);
+  return delaUtTaggar(text).map(del => {
     if (/^<a\b/i.test(del) || /^<img\b/i.test(del)) return del;
-    return del.replace(/(https?:\/\/[^\s<]+)/g, url => {
+    // 1) Webblänkar och bilder
+    let ut = del.replace(/(https?:\/\/[^\s<]+)/g, url => {
       const svans = (url.match(/[.,;:!?)\]]+$/) || [''])[0];
       const ren = svans ? url.slice(0, -svans.length) : url;
       if (/\.(png|jpe?g|gif|webp|svg|avif)(\?[^\s]*)?$/i.test(ren)) {
@@ -310,6 +312,13 @@ function linkify(text) {
       }
       return `<a href="${ren}" target="_blank" rel="noopener noreferrer">${ren}</a>${svans}`;
     });
+    // 2) E-postadresser — bara i text som ännu inte blivit en tagg
+    ut = delaUtTaggar(ut).map(d => {
+      if (/^<a\b/i.test(d) || /^<img\b/i.test(d)) return d;
+      return d.replace(/([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})/g,
+        m => `<a href="mailto:${m}">${m}</a>`);
+    }).join('');
+    return ut;
   }).join('');
 }
 
